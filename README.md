@@ -97,5 +97,3 @@ Get AURA up and running in less than 3 minutes:
 
 ---
 
-## 🛡️ License
-AURA is released under the MIT License.
