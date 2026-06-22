@@ -41,18 +41,6 @@ aura-aqi-platform/
 │   ├── app.js               # Leaflet maps, Chart.js, simulator logic, and Copilot client
 │   └── style.css            # Custom CSS with modern dark glassmorphic styling
 │
-├── docs/                    # Complete hackathon documentation deliverables
-│   ├── PROBLEM_STATEMENT.md
-│   ├── SOLUTION_OVERVIEW.md
-│   ├── SYSTEM_ARCHITECTURE.md
-│   ├── DATABASE_SCHEMA.md
-│   ├── API_DESIGN.md
-│   ├── AGENT_WORKFLOW.md
-│   ├── UI_UX_SCREENS.md
-│   ├── PPT_SLIDES.md
-│   ├── DEMO_VIDEO_SCRIPT.md
-│   ├── DEPLOYMENT_GUIDE.md
-│   └── FUTURE_SCOPE.md
 │
 └── README.md                # This project index file
 ```
