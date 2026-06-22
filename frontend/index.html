@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA - Air Quality Urban Response Agent</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">A</div>
+                <div class="logo-text">AURA</div>
+            </div>
+            
+            <ul class="nav-links">
+                <li class="nav-item active" data-tab="map-section">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span class="nav-text">Hyperlocal Map</span>
+                </li>
+                <li class="nav-item" data-tab="enforce-section">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span class="nav-text">Enforcement</span>
+                </li>
+                <li class="nav-item" data-tab="sim-section">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span class="nav-text">Policy Simulator</span>
+                </li>
+                <li class="nav-item" data-tab="advisory-section">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span class="nav-text">Health Alerts</span>
+                </li>
+                <li class="nav-item" data-tab="copilot-section">
+                    <i class="fa-solid fa-robot"></i>
+                    <span class="nav-text">AI Copilot</span>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- Main Dashboard Window -->
+        <main class="main-window">
+            
+            <!-- Persistent Top Bar -->
+            <header class="top-bar">
+                <div class="top-metrics">
+                    <div class="metric-pill">
+                        <span class="indicator-dot critical"></span>
+                        City Status: <span id="top-status-text">CRITICAL (AQI 161)</span>
+                    </div>
+                    <div class="metric-pill">
+                        <i class="fa-solid fa-users-gear text-secondary"></i>
+                        Active Inspectors: <span>4 On Duty</span>
+                    </div>
+                </div>
+                <div class="time-container text-secondary font-semibold" style="font-size: 0.9rem;">
+                    <i class="fa-regular fa-clock"></i> <span id="live-time">June 22, 2026</span>
+                </div>
+            </header>
+            
+            <!-- SECTION 1: HYPERLOCAL MAP & FORECASTING -->
+            <section id="map-section" class="content-section active">
+                <div class="section-header">
+                    <h1>Ambient Urban Response Analytics</h1>
+                    <p>Real-time ward-level AQI monitoring and 72-hour dispersion forecasts.</p>
+                </div>
+                
+                <div class="map-grid">
+                    <!-- Map Card -->
+                    <div class="card map-card">
+                        <div id="map"></div>
+                    </div>
+                    
+                    <!-- Analytics Panel -->
+                    <div class="analytics-pane">
+                        <div class="card" id="ward-details-card">
+                            <h2 class="analytics-title" id="selected-ward-name">
+                                <i class="fa-solid fa-location-crosshairs text-indigo-400"></i>
+                                Select a Ward on Map
+                            </h2>
+                            <div class="aqi-badge-large" id="selected-ward-aqi-box" style="background: rgba(255,255,255,0.03);">
+                                <div>
+                                    <div class="aqi-label">Current AQI</div>
+                                    <div class="aqi-number" id="selected-ward-aqi">-</div>
+                                </div>
+                                <span class="priority-badge" id="selected-ward-status" style="padding: 8px 16px; font-size: 1rem;">-</span>
+                            </div>
+                            
+                            <!-- Mini Metrics Grid -->
+                            <div class="grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; text-align: center;">
+                                <div style="background: rgba(255,255,255,0.02); padding: 8px; border-radius: 8px;">
+                                    <div class="text-secondary" style="font-size: 0.75rem; text-transform: uppercase;">Traffic</div>
+                                    <div style="font-weight: 700; font-size: 1rem; color: var(--accent-blue);" id="stat-traffic">-</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 8px; border-radius: 8px;">
+                                    <div class="text-secondary" style="font-size: 0.75rem; text-transform: uppercase;">Projects</div>
+                                    <div style="font-weight: 700; font-size: 1rem; color: var(--accent-blue);" id="stat-construction">-</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 8px; border-radius: 8px;">
+                                    <div class="text-secondary" style="font-size: 0.75rem; text-transform: uppercase;">Stacks</div>
+                                    <div style="font-weight: 700; font-size: 1rem; color: var(--accent-blue);" id="stat-industry">-</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Forecast Chart -->
+                        <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                            <h2 class="analytics-title"><i class="fa-solid fa-chart-line text-indigo-400"></i> Hyperlocal Forecast (72 Hours)</h2>
+                            <div style="flex: 1; min-height: 180px; position: relative;">
+                                <canvas id="forecastChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Attribution Chart -->
+                        <div class="card">
+                            <h2 class="analytics-title"><i class="fa-solid fa-chart-pie text-indigo-400"></i> Source Attribution</h2>
+                            <div style="height: 180px; position: relative; display: flex; justify-content: center;">
+                                <canvas id="attributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECTION 2: ENFORCEMENT INTELLIGENCE -->
+            <section id="enforce-section" class="content-section">
+                <div class="section-header">
+                    <h1>Enforcement Intelligence Terminal</h1>
+                    <p>Evidence-backed priority ranking for targeted Smart City inspector dispatches.</p>
+                </div>
+                
+                <div class="enforce-grid">
+                    <!-- Hotspot Queue Card -->
+                    <div class="card">
+                        <h2 class="analytics-title"><i class="fa-solid fa-circle-exclamation text-red-500"></i> Hotspot Intervention Queue</h2>
+                        <div class="hotspot-table-container">
+                            <table class="hotspot-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ward / Area</th>
+                                        <th>Current AQI</th>
+                                        <th>Priority Score</th>
+                                        <th>Primary Source</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hotspot-list">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Evidence Case Dossier Card -->
+                    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h2 class="analytics-title"><i class="fa-solid fa-file-invoice text-indigo-400"></i> Case Dossier Details</h2>
+                            <div id="enforce-details" style="margin-top: 16px;">
+                                <p class="text-secondary" style="text-align: center; padding: 40px 0;">Select a hotspot row to load target dossier evidence.</p>
+                            </div>
+                        </div>
+                        <div id="dossier-actions-bar" style="display: none; border-top: 1px solid var(--border-color); padding-top: 16px; gap: 12px; justify-content: flex-end;">
+                            <button class="btn-select" style="padding: 8px 16px;" onclick="alert('Dossier compiled as PDF and saved to /reports/enforcement_cases_101.pdf')">
+                                <i class="fa-solid fa-file-pdf"></i> Save PDF
+                            </button>
+                            <button class="action-btn" id="dispatch-officer-btn">
+                                <i class="fa-solid fa-person-running"></i> Dispatch Officer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECTION 3: POLICY INTERVENTION SIMULATOR -->
+            <section id="sim-section" class="content-section">
+                <div class="section-header">
+                    <h1>Intervention Simulator & What-If Analysis</h1>
+                    <p>Model policy changes and atmospheric dispersion to preview ward improvements.</p>
+                </div>
+                
+                <div class="simulator-layout">
+                    <!-- Sliders Panel -->
+                    <div class="card">
+                        <h2 class="analytics-title"><i class="fa-solid fa-sliders text-indigo-400"></i> Control Board</h2>
+                        <div class="slider-group">
+                            <div class="slider-container">
+                                <div class="slider-label">
+                                    <span>Traffic Speed Congestion</span>
+                                    <span id="label-traffic-cut">0% Cut</span>
+                                </div>
+                                <input type="range" id="sim-traffic" min="0" max="60" value="0">
+                            </div>
+                            
+                            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05);">
+                            
+                            <div class="toggle-container">
+                                <span class="slider-label">Construction Dust Ban</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="sim-construction">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="toggle-container">
+                                <span class="slider-label">Factory Stack Halts (50%)</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="sim-industry">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="toggle-container">
+                                <span class="slider-label">Mist Spraying Active</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="sim-spraying">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            
+                            <button class="action-btn" style="width: 100%; padding: 12px; margin-top: 16px; font-weight: 700;" id="run-simulation-btn">
+                                <i class="fa-solid fa-play"></i> Run Dispersion Model
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Graph Comparison & Impact Metrics -->
+                    <div class="analytics-pane">
+                        <div class="sim-impact-summary">
+                            <div class="impact-metric">
+                                <h3>Mean City AQI Reduction</h3>
+                                <div class="impact-value" id="sim-aqi-metric">0.0%</div>
+                            </div>
+                            <div class="impact-metric">
+                                <h3>Daily Carbon Offset</h3>
+                                <div class="impact-value" id="sim-carbon-metric">0.0 kg CO₂</div>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="flex: 1; display: flex; flex-direction: column;">
+                            <h2 class="analytics-title"><i class="fa-solid fa-chart-simple text-indigo-400"></i> Ward comparison (Before vs After)</h2>
+                            <div style="flex: 1; min-height: 250px; position: relative;">
+                                <canvas id="simChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECTION 4: CITIZEN ADVISORY HUB -->
+            <section id="advisory-section" class="content-section">
+                <div class="section-header">
+                    <h1>Citizen Health Risk Advisory System</h1>
+                    <p>Publish localized warnings and emergency translations for public broadcast.</p>
+                </div>
+                
+                <div class="advisory-layout">
+                    <!-- Configuration Form -->
+                    <div class="card">
+                        <h2 class="analytics-title"><i class="fa-solid fa-gears text-indigo-400"></i> Configure Alert</h2>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label class="slider-label" style="margin-bottom: 8px;">Target Ward / District</label>
+                            <select id="advisory-ward-select" class="chat-input" style="width: 100%; border-radius: 8px;">
+                                <!-- Filled by JS -->
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="slider-label">Vulnerable Demographics</label>
+                            <div class="selector-grid" id="advisory-role-grid">
+                                <button class="btn-select active" data-role="GENERAL">General Public</button>
+                                <button class="btn-select" data-role="ASTHMATIC">Asthma Patients</button>
+                                <button class="btn-select" data-role="ELDERLY">Elderly Seniors</button>
+                                <button class="btn-select" data-role="CHILDREN">School Children</button>
+                                <button class="btn-select" data-role="OUTDOOR_WORKER">Outdoor Workers</button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="slider-label">Broadcasting Language</label>
+                            <div class="selector-grid" id="advisory-lang-grid" style="grid-template-columns: repeat(4, 1fr);">
+                                <button class="btn-select active" data-lang="EN">English</button>
+                                <button class="btn-select" data-lang="HI">Hindi / हिंदी</button>
+                                <button class="btn-select" data-lang="KN">Kannada / ಕನ್ನಡ</button>
+                                <button class="btn-select" data-lang="TA">Tamil / தமிழ்</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic Output Display -->
+                    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <h2 class="analytics-title"><i class="fa-solid fa-message text-indigo-400"></i> Compiled advisory message</h2>
+                        <div class="advisory-output-card">
+                            <p class="advisory-output-text" id="advisory-output-content">Loading localized health advisory alerts...</p>
+                        </div>
+                        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                            <button class="btn-select" style="padding: 8px 16px;" onclick="alert('Broadcast sent directly to BBMP public messaging loops and digital boards.')">
+                                <i class="fa-solid fa-share-nodes"></i> Broadcast to Public Boards
+                            </button>
+                            <button class="action-btn" onclick="alert('Advisory text copied to clipboard.')">
+                                <i class="fa-solid fa-copy"></i> Copy Alert
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECTION 5: AI COPILOT CHAT PANEL -->
+            <section id="copilot-section" class="content-section">
+                <div class="section-header">
+                    <h1>Smart City AI Copilot</h1>
+                    <p>Natural language command terminal for spatial datasets and quick interventions.</p>
+                </div>
+                
+                <div class="card chat-card">
+                    <!-- Chat display -->
+                    <div class="chat-messages" id="chat-box">
+                        <div class="message bot">
+                            Hello! I am AURA's Smart City Intervention Copilot. I analyze current meteorological logs, active construction clearances, traffic speeds, and forecast grids.
+                            <br><br>
+                            How can I help you keep our urban air clean today? You can try asking about Peenya, Whitefield, or tomorrow's forecasts.
+                        </div>
+                    </div>
+                    
+                    <!-- Suggestions bar -->
+                    <div class="chat-suggestions" id="copilot-suggestions">
+                        <span class="suggestion-pill">Why is the AQI spike high in Peenya?</span>
+                        <span class="suggestion-pill">What is the forecast for tomorrow?</span>
+                        <span class="suggestion-pill">Why is Whitefield experiencing poor air?</span>
+                        <span class="suggestion-pill">Show traffic impacts in Zone 4.</span>
+                    </div>
+                    
+                    <!-- Chat inputs -->
+                    <div class="chat-input-bar">
+                        <input type="text" class="chat-input" id="chat-user-input" placeholder="Type your query to the air quality copilot...">
+                        <button class="chat-send-btn" id="chat-send-btn">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+        </main>
+        
+    </div>
+
+    <!-- ChartJS and Leaflet scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Custom Application Javascript -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
